@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kesarapu Manoj Karthik - Immersive Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* Slate 950 */
+            color: #F1F5F9; /* Slate 100 */
+            overflow-x: hidden;
+            cursor: none;
+        }
+        
+        /* UPDATED: High-visibility custom cursor for desktop */
+        .cursor-dot {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            background-color: #f59e0b; /* amber-500 */
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10001;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s;
+        }
+
+        .cursor-outline {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border: 2px solid #f59e0b; /* amber-500 */
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10001;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s, opacity 0.3s;
+        }
+
+        .cursor-outline.is-hovering {
+            width: 60px;
+            height: 60px;
+            opacity: 0.5;
+        }
+        
+        /* NEW: Utility class to hide cursor on mobile */
+        .cursor-hidden {
+            display: none !important;
+        }
+
+        #webgl-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            outline: none;
+            z-index: 1;
+        }
+
+        .content-section {
+            position: relative;
+            z-index: 2;
+            color: white;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .content-wrapper {
+            max-width: 90%;
+            width: 600px;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        
+        .content-wrapper.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        /* Preloader */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #020617;
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.5s ease;
+        }
+        .loader-bar {
+            width: 200px;
+            height: 2px;
+            background: #334155;
+            margin-top: 20px;
+        }
+        #loader-progress {
+            width: 0%;
+            height: 100%;
+            background: #f59e0b;
+            transition: width 0.3s ease;
+        }
+        
+        /* Modal */
+        #modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        #modal.is-visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .modal-content {
+            background: #0F172A;
+            padding: 2rem;
+            border-radius: 1rem;
+            max-width: 600px;
+            width: 90%;
+            border: 1px solid #334155;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        #modal.is-visible .modal-content {
+            transform: scale(1);
+        }
+        
+        /* Tooltip */
+        #tooltip {
+            position: fixed;
+            display: none;
+            background: #0F172A;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 10001;
+            border: 1px solid #334155;
+            transform: translate(-50%, -120%);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+
+    <div id="preloader">
+        <p class="text-slate-300">Initializing Digital Universe...</p>
+        <div class="loader-bar">
+            <div id="loader-progress"></div>
+        </div>
+    </div>
+
+    <canvas id="webgl-canvas"></canvas>
+    <div id="tooltip"></div>
+
+    <div id="modal">
+        <div class="modal-content">
+            <h3 id="modal-title" class="font-serif text-3xl mb-2 text-amber-500"></h3>
+            <p id="modal-type" class="text-slate-400 mb-4 text-sm uppercase tracking-wider"></p>
+            <p id="modal-description" class="text-slate-300 mb-6"></p>
+            <button id="modal-close" class="text-white font-bold py-2 px-4 rounded-full bg-amber-600 hover:bg-amber-500 transition-colors">Close</button>
+        </div>
+    </div>
+
+    <div class="scroll-container">
+        <section id="hero-section" class="content-section">
+            <div class="content-wrapper">
+                <h1 class="font-serif text-4xl md:text-6xl font-bold mb-4">Kesarapu Manoj Karthik</h1>
+                <p class="text-base md:text-xl text-slate-300">Welcome to my digital universe. Scroll to begin the journey.</p>
+            </div>
+        </section>
+
+        <section id="about-section" class="content-section">
+            <div class="content-wrapper">
+                <h2 class="font-serif text-3xl md:text-4xl font-bold mb-4">About Me</h2>
+                <p class="text-slate-300 text-sm md:text-base">
+                    I am a forward-thinking AI & Data Science student and the Founder of Wholewagon, driven by a passion for building innovative solutions that solve real-world problems. My expertise lies at the intersection of web architecture, data engineering, and machine learning.
+                </p>
+            </div>
+        </section>
+
+        <section id="skills-section" class="content-section">
+             <div class="content-wrapper">
+                <h2 class="font-serif text-3xl md:text-4xl font-bold mb-4">Galaxy of Skills</h2>
+                <p class="text-slate-300 text-sm md:text-base">
+                    My skills are visualized as a dynamic galaxy of interactive objects. Hover to identify a skill, and click to learn more about my proficiency in core competencies like Data Engineering, AI/ML, and full-stack web technologies.
+                </p>
+            </div>
+        </section>
+        
+        <section id="certifications-section" class="content-section">
+             <div class="content-wrapper">
+                <h2 class="font-serif text-3xl md:text-4xl font-bold mb-4">Nebula of Certifications</h2>
+                <p class="text-slate-300 text-sm md:text-base">
+                    Within this nebula, each crystalline shard represents a certification I've earned. Hover to identify and click to see the details of my credentials in Cybersecurity, Generative AI, Cloud Architecture, and more.
+                </p>
+            </div>
+        </section>
+
+        <section id="projects-section-start" class="content-section">
+             <div class="content-wrapper">
+                <h2 class="font-serif text-3xl md:text-4xl font-bold mb-4">Portfolio of Projects</h2>
+                <p class="text-slate-300 text-sm md:text-base">
+                    The camera will now guide you through my project solar system. Each planetary body represents a key project, complete with orbiting moons for the technologies used.
+                </p>
+            </div>
+        </section>
+        <section id="project-1" class="content-section"></section>
+        <section id="project-2" class="content-section"></section>
+        <section id="project-3" class="content-section"></section>
+
+        <section id="contact-section" class="content-section">
+             <div class="content-wrapper">
+                <h2 class="font-serif text-3xl md:text-4xl font-bold mb-4">Get In Touch</h2>
+                <p class="text-slate-300 mb-6 text-sm md:text-base">
+                    Let's connect and build something amazing together. Reach out via LinkedIn or email.
+                </p>
+                 <div class="mt-8">
+                    <a href="https://www.linkedin.com/in/kesarapu-manoj-karthik" target="_blank" class="text-3xl mr-6 text-slate-400 hover:text-amber-500 transition-all duration-300 transform hover:scale-125"><i class="fab fa-linkedin"></i></a>
+                    <a href="mailto:manojkarthik0246@gmail.com" class="text-3xl text-slate-400 hover:text-amber-500 transition-all duration-300 transform hover:scale-125"><i class="fas fa-envelope"></i></a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/ScrollTrigger.min.js"></script>
+    <script>
+        const isMobile = window.innerWidth <= 768;
+
+        // --- High-visibility cursor logic ---
+        const cursorDot = document.querySelector('.cursor-dot');
+        const cursorOutline = document.querySelector('.cursor-outline');
+        const tooltip = document.getElementById('tooltip');
+
+        // UPDATED: Robust cursor visibility logic
+        if (isMobile) {
+            cursorDot.classList.add('cursor-hidden');
+            cursorOutline.classList.add('cursor-hidden');
+        } else {
+            window.addEventListener('mousemove', e => {
+                const posX = e.clientX;
+                const posY = e.clientY;
+                cursorDot.style.left = `${posX}px`;
+                cursorDot.style.top = `${posY}px`;
+                gsap.to(cursorOutline, { duration: 0.4, left: `${posX}px`, top: `${posY}px`, ease: "power2.out" });
+                gsap.to(tooltip, { duration: 0.4, left: `${posX}px`, top: `${posY}px`, ease: "power2.out" });
+            });
+
+            const handleLinkHover = (e) => {
+                cursorOutline.classList.toggle('is-hovering', e.type === 'mouseover');
+            };
+
+            document.querySelectorAll('a, button').forEach(el => {
+                el.addEventListener('mouseover', handleLinkHover);
+                el.addEventListener('mouseout', handleLinkHover);
+            });
+        }
+
+        // --- Core WebGL Experience ---
+        class WebGLExperience {
+            constructor() {
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.renderer = new THREE.WebGLRenderer({
+                    canvas: document.querySelector('#webgl-canvas'),
+                    alpha: true
+                });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
+                this.clock = new THREE.Clock();
+                this.interactiveObjects = [];
+                this.raycaster = new THREE.Raycaster();
+                this.mouse = new THREE.Vector2();
+
+                this.init();
+            }
+
+            init() {
+                this.addLights();
+                this.addObjects();
+                this.initScrollAnimations();
+                this.initEventListeners();
+                this.animate();
+            }
+
+            addLights() {
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                this.scene.add(ambientLight);
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+                directionalLight.position.set(5, 5, 5);
+                this.scene.add(directionalLight);
+            }
+
+            addObjects() {
+                // Dynamic Nebula Background
+                const nebulaGeometry = new THREE.BufferGeometry();
+                const nebulaVertices = [];
+                const particleCount = isMobile ? 5000 : 20000;
+                for (let i = 0; i < particleCount; i++) {
+                    const x = (Math.random() - 0.5) * 300;
+                    const y = (Math.random() - 0.5) * 300;
+                    const z = (Math.random() - 0.5) * 300;
+                    nebulaVertices.push(x, y, z);
+                }
+                nebulaGeometry.setAttribute('position', new THREE.Float32BufferAttribute(nebulaVertices, 3));
+                const nebulaMaterial = new THREE.PointsMaterial({
+                    color: 0x4f46e5, size: 0.02, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.5
+                });
+                this.nebula = new THREE.Points(nebulaGeometry, nebulaMaterial);
+                this.scene.add(this.nebula);
+
+                // Skills Galaxy
+                this.skillsGroup = new THREE.Group();
+                const skillData = [
+                    { name: 'Data Engineering', description: 'Designing and building systems for collecting, storing, and analyzing data at scale.' },
+                    { name: 'AI/ML', description: 'Developing and deploying machine learning models to solve complex problems.' },
+                    { name: 'Data Modeling', description: 'Creating optimal data models to support application and analytics requirements.' },
+                    { name: 'PHP', description: 'Server-side scripting for web development, used in the Wholewagon platform.' },
+                    { name: 'SQL', description: 'Database management and query optimization for scalable backends.' },
+                    { name: 'HTML/CSS', description: 'Building the structural and visual foundation of web applications.' }
+                ];
+                skillData.forEach((skill, i) => {
+                    const skillGeo = new THREE.SphereGeometry(0.5, 16, 16);
+                    const skillMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0x653b00, metalness: 0.6, roughness: 0.4 });
+                    const skillObj = new THREE.Mesh(skillGeo, skillMat);
+                    const radius = isMobile ? 3 : 5;
+                    if (isMobile) {
+                        skillObj.position.set((Math.random() - 0.5) * 4, (i - (skillData.length - 1) / 2) * 2, (Math.random() - 0.5) * 4);
+                    } else {
+                        const angle = i * (Math.PI * 2 / skillData.length);
+                        skillObj.position.set(Math.cos(angle) * radius, (Math.random() - 0.5) * 4, Math.sin(angle) * radius);
+                    }
+                    skillObj.userData = { type: 'Skill', name: skill.name, description: skill.description };
+                    this.skillsGroup.add(skillObj);
+                    this.interactiveObjects.push(skillObj);
+                });
+                this.skillsGroup.position.z = -20;
+                this.scene.add(this.skillsGroup);
+                
+                // Certifications Nebula
+                this.certificationsGroup = new THREE.Group();
+                const certData = [
+                    { name: 'Microsoft Copilot', description: 'Streamlining Your Work with Microsoft Copilot' },
+                    { name: 'Tata Group Cybersecurity', description: 'Tata Group - Cybersecurity Analyst Job Simulation' },
+                    { name: 'Generative AI', description: 'Generative AI: The Evolution of Thoughtful Online Search' },
+                    { name: 'AWS Solutions Architecture', description: 'AWS APAC - Solutions Architecture Job Simulation' },
+                    { name: 'Ethics in GenAI', description: 'Ethics in the Age of Generative AI' }
+                ];
+                certData.forEach((cert, i) => {
+                    const certGeo = new THREE.IcosahedronGeometry(0.8, 0);
+                    const certMat = new THREE.MeshStandardMaterial({
+                        color: 0x818cf8, emissive: 0x3730a3, metalness: 0.7, roughness: 0.3
+                    });
+                    const certShard = new THREE.Mesh(certGeo, certMat);
+                    if (isMobile) {
+                        certShard.position.set((Math.random() - 0.5) * 4, (i - (certData.length - 1) / 2) * 2.5, 0);
+                    } else {
+                        const angle = i * (Math.PI * 2 / certData.length);
+                        certShard.position.set(Math.cos(angle) * 6, Math.sin(angle) * 6, 0);
+                    }
+                    certShard.userData = { type: 'Certification', name: cert.name, description: cert.description };
+                    this.certificationsGroup.add(certShard);
+                    this.interactiveObjects.push(certShard);
+                });
+                this.certificationsGroup.position.z = -40;
+                this.scene.add(this.certificationsGroup);
+                
+                // Projects Solar Systems
+                this.projectsGroup = new THREE.Group();
+                const projectData = [
+                    { name: 'Wholewagon E-commerce Platform', description: 'Founder and CEO, building a full-stack e-commerce platform. Optimized database schema and RESTful APIs, reducing backend latency by 25%.', color: 0x3498db, moons: ['PHP', 'SQL', 'CSS'] },
+                    { name: 'AI-Powered Chatbot', description: 'A conceptual project for a conversational AI to assist users with common queries, built using modern NLP techniques.', color: 0x2ecc71, moons: ['Python', 'AI/ML'] },
+                    { name: 'Data Visualization Dashboard', description: 'A conceptual project for an interactive dashboard for visualizing complex datasets, providing actionable insights.', color: 0xe74c3c, moons: ['JS', 'D3.js'] }
+                ];
+                projectData.forEach((proj, i) => {
+                    const planetGroup = new THREE.Group();
+                    const planetGeo = new THREE.SphereGeometry(1.5, 32, 32);
+                    const planetMat = new THREE.MeshStandardMaterial({ color: proj.color, metalness: 0.3, roughness: 0.6 });
+                    const planet = new THREE.Mesh(planetGeo, planetMat);
+                    planet.userData = { type: 'Project', name: proj.name, description: proj.description };
+                    planetGroup.add(planet);
+                    this.interactiveObjects.push(planet);
+
+                    proj.moons.forEach((moonName, j) => {
+                        const moonGeo = new THREE.SphereGeometry(0.3, 16, 16);
+                        const moonMat = new THREE.MeshStandardMaterial({ color: 0x9ca3af });
+                        const moon = new THREE.Mesh(moonGeo, moonMat);
+                        const angle = j * (Math.PI * 2 / proj.moons.length);
+                        const orbitRadius = 2.5;
+                        moon.position.set(Math.cos(angle) * orbitRadius, 0, Math.sin(angle) * orbitRadius);
+                        planetGroup.add(moon);
+                    });
+
+                    if (isMobile) {
+                        planetGroup.position.set(0, (i - (projectData.length - 1) / 2) * 10, 0);
+                    } else {
+                        planetGroup.position.set((i - (projectData.length - 1) / 2) * 15, 0, 0);
+                    }
+                    this.projectsGroup.add(planetGroup);
+                });
+                this.projectsGroup.position.z = -60;
+                this.scene.add(this.projectsGroup);
+            }
+
+            initScrollAnimations() {
+                gsap.registerPlugin(ScrollTrigger);
+                
+                document.querySelectorAll('.content-wrapper').forEach((el) => {
+                    ScrollTrigger.create({
+                        trigger: el.parentElement,
+                        start: 'top center',
+                        end: 'bottom center',
+                        onEnter: () => el.classList.add('is-visible'),
+                        onLeaveBack: () => el.classList.remove('is-visible')
+                    });
+                });
+
+                const tl = gsap.timeline({
+                    scrollTrigger: {
+                        trigger: '.scroll-container',
+                        start: 'top top',
+                        end: 'bottom bottom',
+                        scrub: 1.5
+                    }
+                });
+
+                // Common start
+                tl.to(this.camera.position, { z: -18, ease: 'power1.inOut' }, 'about');
+
+                if (isMobile) {
+                    // Mobile camera journey (vertical)
+                    tl.to(this.camera.position, { y: 0, z: -38, ease: 'power2.inOut' }, 'skills')
+                      .to(this.camera.position, { y: 0, z: -58, ease: 'power2.inOut' }, 'certifications');
+
+                    const projectSystems = this.projectsGroup.children;
+                    tl.to(this.camera.position, { z: this.projectsGroup.position.z + 10, ease: 'power1.inOut' }, 'projects-start');
+                    projectSystems.forEach((system, i) => {
+                        tl.to(this.camera.position, {
+                            y: system.position.y,
+                            z: this.projectsGroup.position.z + 8,
+                            ease: 'power2.inOut'
+                        }, `project-${i}`);
+                    });
+                    tl.to(this.camera.position, { z: -98, y: 5, ease: 'power1.inOut' }, 'contact');
+
+                } else {
+                    // Desktop camera journey (cinematic)
+                    tl.to(this.skillsGroup.rotation, { y: Math.PI, ease: 'power1.inOut' }, 'about')
+                      .to(this.camera.position, { z: -38, x: 3, ease: 'power2.inOut' }, 'skills')
+                      .to(this.camera.rotation, { y: -Math.PI / 8, ease: 'power2.inOut' }, 'skills')
+                      .to(this.camera.position, { z: -58, x: 0, ease: 'power2.inOut' }, 'certifications')
+                      .to(this.camera.rotation, { y: 0, ease: 'power2.inOut' }, 'certifications');
+
+                    const projectSystems = this.projectsGroup.children;
+                    tl.to(this.camera.position, { z: this.projectsGroup.position.z + 15, ease: 'power1.inOut' }, 'projects-start');
+                    projectSystems.forEach((system, i) => {
+                        tl.to(this.camera.position, {
+                            x: system.position.x, y: system.position.y + 2, z: this.projectsGroup.position.z + 8, ease: 'power2.inOut'
+                        }, `project-${i}`)
+                        .to(this.camera.rotation, { x: -0.2, y: 0, ease: 'power2.inOut' }, `project-${i}`);
+                    });
+                    tl.to(this.camera.position, { z: -98, y: 5, x: 0, ease: 'power1.inOut' }, 'contact')
+                      .to(this.camera.rotation, { x: 0, y: 0, ease: 'power1.inOut' }, 'contact');
+                }
+            }
+            
+            initEventListeners() {
+                window.addEventListener('resize', this.onWindowResize.bind(this));
+                window.addEventListener('mousemove', this.onMouseMove.bind(this));
+                window.addEventListener('click', this.onClick.bind(this));
+            }
+            
+            onWindowResize() {
+                window.location.reload();
+            }
+
+            onMouseMove(event) {
+                this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            }
+
+            onClick() {
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+                const intersects = this.raycaster.intersectObjects(this.interactiveObjects, true);
+
+                if (intersects.length > 0) {
+                    const { type, name, description } = intersects[0].object.userData;
+                    if (name) this.showModal(type, name, description);
+                }
+            }
+            
+            showModal(type, title, description) {
+                document.getElementById('modal-type').innerText = type;
+                document.getElementById('modal-title').innerText = title;
+                document.getElementById('modal-description').innerText = description;
+                document.getElementById('modal').classList.add('is-visible');
+            }
+
+            animate() {
+                const elapsedTime = this.clock.getElapsedTime();
+
+                this.nebula.rotation.y = elapsedTime * 0.005;
+                this.skillsGroup.rotation.y = elapsedTime * 0.1;
+                this.certificationsGroup.children.forEach(shard => {
+                    shard.rotation.x += 0.005;
+                    shard.rotation.y += 0.005;
+                    shard.material.emissiveIntensity = Math.sin(elapsedTime * 2 + shard.position.x) * 0.5 + 0.5;
+                });
+                this.projectsGroup.children.forEach(system => {
+                    system.rotation.y += 0.002;
+                    system.children.forEach((obj, i) => {
+                        if (i > 0) {
+                            const angle = elapsedTime * (0.5 + i * 0.1);
+                            const orbitRadius = 2.5;
+                            obj.position.x = Math.cos(angle) * orbitRadius;
+                            obj.position.z = Math.sin(angle) * orbitRadius;
+                        }
+                    });
+                });
+                
+                if (!isMobile) {
+                    this.raycaster.setFromCamera(this.mouse, this.camera);
+                    const intersects = this.raycaster.intersectObjects(this.interactiveObjects, true);
+                    
+                    let isHoveringObject = false;
+                    tooltip.style.display = 'none';
+                    this.interactiveObjects.forEach(obj => {
+                        obj.material.emissive.setHex(obj.userData.originalEmissive || 0x000000);
+                    });
+
+                    if (intersects.length > 0) {
+                        const intersectedObject = intersects[0].object;
+                        if (intersectedObject.userData.name) {
+                            if (!intersectedObject.userData.originalEmissive) {
+                               intersectedObject.userData.originalEmissive = intersectedObject.material.emissive.getHex();
+                            }
+                            intersectedObject.material.emissive.setHex(0x555555);
+                            isHoveringObject = true;
+                            
+                            tooltip.style.display = 'block';
+                            tooltip.textContent = intersectedObject.userData.name;
+                        }
+                    }
+                    cursorOutline.classList.toggle('is-hovering', isHoveringObject);
+                }
+
+                this.renderer.render(this.scene, this.camera);
+                requestAnimationFrame(this.animate.bind(this));
+            }
+        }
+        
+        const preloader = document.getElementById('preloader');
+        const progress = document.getElementById('loader-progress');
+        
+        let loaded = 0;
+        const total = 100;
+        const interval = setInterval(() => {
+            loaded += 5;
+            progress.style.width = `${loaded}%`;
+            if (loaded >= total) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    preloader.style.opacity = '0';
+                    preloader.addEventListener('transitionend', () => preloader.style.display = 'none');
+                }, 500);
+            }
+        }, 100);
+
+        document.getElementById('modal-close').addEventListener('click', () => {
+             document.getElementById('modal').classList.remove('is-visible');
+        });
+
+        window.addEventListener('load', () => {
+            new WebGLExperience();
+        });
+
+    </script>
+</body>
+
+</html>
